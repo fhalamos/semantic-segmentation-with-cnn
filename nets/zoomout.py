@@ -21,7 +21,7 @@ class Zoomout(nn.Module):
         self.feature_list = list(self.vgg.features.children())
 
         #Index of conv2d layers
-        self.index_layers_to_extract = [0,3,6,8,11,13,16,18]
+        self.index_layers_to_extract = [0,3,8,13,18]#6,11,16
 
         """
         TODO:  load the correct layers to extract zoomout features.
@@ -40,7 +40,7 @@ class Zoomout(nn.Module):
 
         layer_output = x
 
-        output = []
+        activations = []
 
         #Loop over all the layers of the net
         for index, layer in enumerate(self.feature_list):
@@ -48,24 +48,16 @@ class Zoomout(nn.Module):
             #Apply layer
             layer_output = layer(layer_output)
 
+            #In the case of a conv2d layer, save activation
             if(index in self.index_layers_to_extract):
-                # print(index)
-                # print(layer)
-                # print(layer_output.shape)
-                output.append(layer_output)
+                
+#->Not very sure of all arguments here
+                upsampled_layer_output = F.interpolate(layer_output, size=224, mode='bilinear', align_corners=True)
 
+                activations.append(upsampled_layer_output)
 
-
-        # layers_to_extract = torch.Tensor()
-
-        # for layer_index in self.index_layers_to_extract:
-        #     print(self.feature_list[layer_index])
-        #     print(self.vgg.features.children())
-
-        # # torch.cat()
-
-        # print("toy aca")
-        # raise NotImplementedError
+        output = torch.cat(activations, dim = 1)
+        return output
 
 
 # Implement the 2d cross entropy, both fc and dense classifier and finish 
