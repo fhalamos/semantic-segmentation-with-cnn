@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 import torchvision.models as models
-from zoomout import *
+from .zoomout import *
 import numpy as np
 from torchvision import transforms
 
