@@ -12,8 +12,6 @@ import random
 
 def extract_samples(zoomout, dataset):
 
-    print(len(dataset)) #1464 images
-
     samples_features = []
     samples_labels = []
 
@@ -62,13 +60,6 @@ def main():
 
     np.save("./features/feats_x.npy", features)
     np.save("./features/feats_y.npy", labels)
-
-    #Save means and stds
-    means = np.mean(features, axis=0)
-    stds = np.std(features, axis=0)
-
-    np.save("./features/mean.npy", means)
-    np.save("./features/std.npy", stds)  
 
 
 if __name__ == '__main__':

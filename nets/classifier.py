@@ -26,13 +26,35 @@ class FCClassifier(nn.Module):
         TODO: Implement a fully connected classifier.
         """
         # You will need to compute these and store as *.npy files
-        self.mean = torch.Tensor(np.load("./features/mean.npy"))
-        self.std = torch.Tensor(np.load("./features/std.npy"))
+
+
+        #Save means and stds
+        features = np.load("./features/feats_x.npy")        
+        means = np.mean(features, axis=0)
+        stds = np.std(features, axis=0)
+
+        np.save("./features/mean.npy", means)
+        np.save("./features/std.npy", stds)  
+
+        self.mean = torch.Tensor(means)#np.load("./features/mean.npy"))
+        self.std = torch.Tensor(stds)#np.load("./features/std.npy"))
+
+        self.fc1 = nn.Linear(1472,512)
+        self.fc2 = nn.Linear(512,21)
+
 
     def forward(self, x):
         # normalization
+
         x = (x - self.mean)/self.std
-        raise NotImplementedError
+
+        x = self.fc1(x)
+
+        x = self.fc2(x)
+
+        # probs = F.softmax(x, dim=0)
+
+        return x
 
 
 class DenseClassifier(nn.Module):

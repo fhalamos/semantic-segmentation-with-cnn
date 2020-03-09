@@ -9,6 +9,7 @@ def cross_entropy2d(predicts, targets):
   #->Not considering weighting classes for better accuracy
   
   loss = torch.nn.CrossEntropyLoss()
+
   output = loss(predicts, targets)
 
   return output

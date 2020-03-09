@@ -32,15 +32,36 @@ def train(dataset, model, optimizer, epoch):
 
     data_x, data_y = dataset
 
-    model.train()
+    model.train() #Set model in traininig mode
 
-    raise NotImplementedError
+    for e in range(epoch):
+        print(str(e)+'/'+str(epoch))
 
-    """
-    Put train loop here.
-    """
+        # Move data to device, e.g. CPU or GPU
+        # if(USE_GPU and torch.cuda.is_available()):
+        #     dataset_x = dataset_x.cuda(device)
+        #     dataset_y = dataset_y.cuda(device)
 
-    torch.save(model, your_path + "/models/fc_cls.pkl")
+        # Zero out all of the gradients for the variables which the optimizer
+        # will update.
+        optimizer.zero_grad()
+
+        #Forward
+        predictions = model.forward(data_x)
+
+        #Loss
+        loss = cross_entropy2d(predictions, data_y)
+
+
+        #Backwards pass
+#-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
+        loss.backward()
+
+        #Update parameters of model
+        optimizer.step()
+
+
+    torch.save(model, "./models/fc_cls.pkl")
 
 
 
@@ -48,15 +69,16 @@ def main():
 
     classifier = FCClassifier().float()
 
-    # optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# pick an optimizer.
+    optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# pick an optimizer.
 
-    # dataset_x = np.load("./features/feats_x.npy")
-    # dataset_y = np.load("./features/feats_y.npy")
+    dataset_x = torch.tensor(np.load("./features/feats_x.npy"), dtype=torch.long)
+    dataset_y = torch.tensor(np.load("./features/feats_y.npy"), dtype=torch.long)
 
-    # num_epochs = 20# your choice, try > 10
+    num_epochs = 20# your choice, try > 10
 
+#-> I think this loop shouldnt be here but rather inside the train method
     # for epoch in range(num_epochs):
-    #     train([dataset_x, dataset_y], classifier, optimizer, epoch)
+    train([dataset_x, dataset_y], classifier, optimizer, num_epochs)
 
 if __name__ == '__main__':
     main()
