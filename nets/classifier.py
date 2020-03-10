@@ -39,18 +39,24 @@ class FCClassifier(nn.Module):
         self.mean = torch.Tensor(means)#np.load("./features/mean.npy"))
         self.std = torch.Tensor(stds)#np.load("./features/std.npy"))
 
+#-> Should this fcc classifier have convolutions? No right? The input is not images
+
         self.fc1 = nn.Linear(1472,512)
         self.fc2 = nn.Linear(512,21)
+
+        self.dropout1 = nn.Dropout2d(0.25)
 
 
     def forward(self, x):
         # normalization
-
         x = (x - self.mean)/self.std
 
         x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout1(x)
 
         x = self.fc2(x)
+        x = F.relu(x)
 
         # probs = F.softmax(x, dim=0)
 
