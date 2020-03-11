@@ -25,31 +25,55 @@ from utils import *
 def train(args, zoomout, model, train_loader, optimizer, epoch):
     count = 0
 
+
+    model = model.to(device=device)
+
     model.train()
 
     for batch_idx, (images, labels) in enumerate(train_loader):
 
-        """
-        TODO: Implement training loop.
-        """
+        if(USE_GPU and torch.cuda.is_available()):
+            images = images.cuda(device)
+            labels = labels.cuda(device)
 
-        raise NotImplementedError
+
+        #Generate tensor of features (hypercolumns) of every image
+        images_features = []
+        for image in images:
+            images_features.append(zoomout.forward(image.cpu().float().unsqueeze(0)))       
+        
+        features = torch.cat(images_features, dim = 0)
+
+        if(USE_GPU and torch.cuda.is_available()):
+            features = features.cuda(device)
+
+        model.train() #Set model in train mode
+
+        optimizer.zero_grad() #zero out all of the gradients 
+
+        predicts = model.forward(features)
+
+        loss = cross_entropy2d(predicts, labels)
+
+        loss.backward()
+
+        optimizer.step()
 
         if batch_idx % 20 == 0:
             count = count + 1
-            print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.data[0]))
+            print("Epoch [%d/%d] Loss: %.4f" % (epoch+1, args.n_epoch, loss.data.item()))
 
         if batch_idx % 20 == 0:
             """
             Visualization of results.
             """
             pred = predicts[0,:,:,:]
-            gt = labels[0,:,:].data.numpy().squeeze()
-            im = images[0,:,:,:].data.numpy().squeeze()
+            gt = labels[0,:,:].data.cpu().numpy().squeeze()
+            im = images[0,:,:,:].data.cpu().numpy().squeeze()
             im = np.swapaxes(im, 0, 2)
             im = np.swapaxes(im, 0, 1)
             _, pred_mx = torch.max(pred, 0)
-            pred = pred_mx.data.numpy().squeeze()
+            pred = pred_mx.data.cpu().numpy().squeeze()
             image = Image.fromarray(im.astype(np.uint8), mode='RGB')
 
             image.save("./imgs/im_" + str(count) + "_" + str(epoch) + "_.png")
@@ -70,7 +94,7 @@ def val(args, zoomout, model, val_loader):
         data, target = data.float(), target.float()
         score = model(zoomout(data))
 
-        _, pred = torch.max(score, 0)
+        _, pred = torch.max(score, 1)#0
         lbl_pred = pred.data.numpy().astype(np.int64)
         lbl_true = target.data.numpy().astype(np.int64)
 
@@ -89,7 +113,18 @@ def val(args, zoomout, model, val_loader):
     FWAV Accuracy: {3}'''.format(*metrics))
 
 
+
+USE_GPU = True
+dtype = torch.float32
+if USE_GPU and torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
+print('using device:', device)
+
+
 def main():
+
     # You can add any args you want here
     parser = argparse.ArgumentParser(description='Hyperparams')
     parser.add_argument('--model_path', nargs='?', type=str, default='zoomoutscratch_pascal_1_6.pkl', help='Path to the saved model')
@@ -105,14 +140,13 @@ def main():
     for param in zoomout.parameters():
         param.requires_grad = False
 
+    fc_model_path = './models/fc_cls.pkl'
+
     fc_classifier = torch.load(fc_model_path)
+
     classifier = DenseClassifier(fc_model=fc_classifier).float()
 
-    """
-       TODO: Pick an optimizer.
-       Reasonable optimizer: Adam with learning rate 1e-4.  Start in range [1e-3, 1e-4].
-    """
-    optimizer = # pick an optimizer
+    optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# Start in range [1e-3, 1e-4].
 
     dataset_train = PascalVOC(split = 'train')
     dataset_val = PascalVOC(split = 'val')
@@ -122,6 +156,7 @@ def main():
     val_loader = torch.utils.data.DataLoader(dataset_val, batch_size=1, shuffle=False, num_workers=4)
 
     for epoch in range(args.n_epoch):
+        print(epoch)
         train(args, zoomout, classifier, train_loader, optimizer, epoch)
         val(args, zoomout, classifier, val_loader)
 

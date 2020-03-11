@@ -32,33 +32,67 @@ def train(dataset, model, optimizer, epoch):
 
     data_x, data_y = dataset
 
+
+    tensor_x = torch.tensor(data_x, dtype=torch.long)
+    tensor_y = torch.tensor(data_y, dtype=torch.long)
+
     model.train() #Set model in traininig mode
 
-    for e in range(epoch):
-        print(str(e)+'/'+str(epoch))
+    print("Epoch: "+str(epoch))
 
-        # Move data to device, e.g. CPU or GPU
-        # if(USE_GPU and torch.cuda.is_available()):
-        #     dataset_x = dataset_x.cuda(device)
-        #     dataset_y = dataset_y.cuda(device)
-
-        # Zero out all of the gradients for the variables which the optimizer
-        # will update.
-        optimizer.zero_grad()
-
-        #Forward
-        predictions = model.forward(data_x)
-
-        #Loss
-        loss = cross_entropy2d(predictions, data_y)
+    # Move data to device, e.g. CPU or GPU
+    # if(USE_GPU and torch.cuda.is_available()):
+    #     dataset_x = dataset_x.cuda(device)
+    #     dataset_y = dataset_y.cuda(device)
 
 
-        #Backwards pass
-#-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
-        loss.backward()
 
-        #Update parameters of model
-        optimizer.step()
+    #ALTERNATIVE 1
+    # Zero out all of the gradients for the variables which the optimizer
+    # will update.
+    optimizer.zero_grad()
+
+    #Forward
+    predictions = model.forward(tensor_x)
+
+    #Loss
+    loss = cross_entropy2d(predictions, tensor_y)
+
+    #Backwards pass
+    #-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
+    loss.backward()
+
+    #Update parameters of model
+    optimizer.step()
+
+
+    #ALTERNATIVE 2
+
+    # tensor_dataset = data.TensorDataset(tensor_x, tensor_y)
+    # loader = data.DataLoader(tensor_dataset, batch_size = batch_size, shuffle=True)
+
+    # for t, (x,y) in enumerate(loader):
+
+    #     # Zero out all of the gradients for the variables which the optimizer
+    #     # will update.
+    #     optimizer.zero_grad()
+
+    #     #Forward
+    #     predictions = model.forward(x)
+
+    #     #Loss
+    #     loss = cross_entropy2d(predictions, y)
+
+
+    #     #Backwards pass
+    #     #-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
+    #     loss.backward()
+
+    #     #Update parameters of model
+    #     optimizer.step()
+
+
+    print(loss)
 
 
     torch.save(model, "./models/fc_cls.pkl")
@@ -71,14 +105,15 @@ def main():
 
     optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# pick an optimizer.
 
-    dataset_x = torch.tensor(np.load("./features/feats_x.npy"), dtype=torch.long)
-    dataset_y = torch.tensor(np.load("./features/feats_y.npy"), dtype=torch.long)
+    dataset_x = np.load("./features/feats_x.npy")
+    dataset_y = np.load("./features/feats_y.npy")
 
     num_epochs = 20# your choice, try > 10
 
 #-> I think this loop shouldnt be here but rather inside the train method
-    # for epoch in range(num_epochs):
-    train([dataset_x, dataset_y], classifier, optimizer, num_epochs)
+
+    for epoch in range(num_epochs):
+        train([dataset_x, dataset_y], classifier, optimizer, epoch)
 
 if __name__ == '__main__':
     main()

@@ -17,9 +17,10 @@ def extract_samples(zoomout, dataset):
 
 
     for image_idx in range(len(dataset)):
-        print(image_idx)
+        
         images, labels = dataset[image_idx]
 
+        
         #Get hypercolumn features
         with torch.no_grad():
             features = zoomout.forward(images.cpu().float().unsqueeze(0))

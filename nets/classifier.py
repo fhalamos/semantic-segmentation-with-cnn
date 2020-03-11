@@ -44,16 +44,17 @@ class FCClassifier(nn.Module):
         self.fc1 = nn.Linear(1472,512)
         self.fc2 = nn.Linear(512,21)
 
-        self.dropout1 = nn.Dropout2d(0.25)
+        # self.dropout1 = nn.Dropout2d(0.25)
 
 
     def forward(self, x):
         # normalization
-        x = (x - self.mean)/self.std
+        x = (x - self.mean)/(self.std+ 1e-5)
 
         x = self.fc1(x)
         x = F.relu(x)
-        x = self.dropout1(x)
+
+        # x = self.dropout1(x)
 
         x = self.fc2(x)
         x = F.relu(x)
@@ -71,22 +72,49 @@ class DenseClassifier(nn.Module):
     """
     def __init__(self, fc_model, n_classes=21):
         super(DenseClassifier, self).__init__()
-        """
-        TODO: Convert a fully connected classifier to 1x1 convolutional.
-        """
+
 
         self.mean = torch.Tensor(np.load("./features/mean.npy"))
         self.std = torch.Tensor(np.load("./features/std.npy"))
 
         # You'll need to add these trailing dimensions so that it broadcasts correctly.
-        self.mean = torch.Tensor(np.expand_dims(np.expand_dims(mean, -1), -1))
-        self.std = torch.Tensor(np.expand_dims(np.expand_dims(std, -1), -1))
+        self.mean = torch.Tensor(np.expand_dims(np.expand_dims(self.mean, -1), -1))
+        self.std = torch.Tensor(np.expand_dims(np.expand_dims(self.std, -1), -1))        
+
+        #Convert a fully connected classifier to 1x1 convolutional.               
+        for index, fc_layer in enumerate(fc_model.children()):
+
+            fc_layer_params = fc_layer.state_dict()
+            dim_out, dim_in = fc_layer_params["weight"].shape    
+            
+            #Declare the convolution layer
+            convolution = nn.Conv2d(dim_in, dim_out, 1,1)
+
+            #Load the weights
+            convolution.load_state_dict(
+                {"weight":fc_layer_params["weight"].view(dim_out, dim_in, 1,1),
+                "bias":fc_layer_params["bias"]})
+
+            #Set the convolution layers to dense classifier
+            setattr(self, "conv"+str(index+1), convolution)
+
+
 
     def forward(self, x):
         """
         Make sure to upsample back to 224x224 --take a look at F.upsample_bilinear
         """
+        x = self.conv1(x)
+        x = F.relu(x)
+        
+
+        x = self.conv2(x)
+        x = F.relu(x)
 
         # normalization
-        x = (x - self.mean)/self.std
-        raise NotImplementedError
+        # x = (x - self.mean)/self.std
+        # print(x.shape)
+    
+        return x
+
+
