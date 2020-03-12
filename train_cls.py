@@ -40,12 +40,9 @@ def train(dataset, model, optimizer, epoch):
 
     print("Epoch: "+str(epoch))
 
-    # Move data to device, e.g. CPU or GPU
-    # if(USE_GPU and torch.cuda.is_available()):
-    #     dataset_x = dataset_x.cuda(device)
-    #     dataset_y = dataset_y.cuda(device)
 
-    #ALTERNATIVE 1
+    #ALTERNATIVE 1: work with all images (max batch_size)
+
     # Zero out all of the gradients for the variables which the optimizer
     # will update.
     optimizer.zero_grad()
@@ -64,7 +61,7 @@ def train(dataset, model, optimizer, epoch):
     optimizer.step()
 
 
-    #ALTERNATIVE 2
+    #ALTERNATIVE 2, using batch_size
 
     # tensor_dataset = data.TensorDataset(tensor_x, tensor_y)
     # loader = data.DataLoader(tensor_dataset, batch_size = batch_size, shuffle=True)
@@ -83,7 +80,6 @@ def train(dataset, model, optimizer, epoch):
 
 
     #     #Backwards pass
-    #     #-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
     #     loss.backward()
 
     #     #Update parameters of model

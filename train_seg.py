@@ -136,10 +136,10 @@ def main():
 
     # You can add any args you want here
     parser = argparse.ArgumentParser(description='Hyperparams')
-    parser.add_argument('--model_path', nargs='?', type=str, default='zoomoutscratch_pascal_1_6.pkl', help='Path to the saved model')
+    parser.add_argument('--model_path', nargs='?', type=str, default='./models/fc_cls.pkl', help='Path to the saved model')
     parser.add_argument('--n_epoch', nargs='?', type=int, default=10,    help='# of the epochs')
     parser.add_argument('--batch_size', nargs='?', type=int, default=2,  help='Batch Size')
-    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-4, help='Learning Rate')
+    parser.add_argument('--l_rate', nargs='?', type=float, default=1e-3, help='Learning Rate')
 
     args = parser.parse_args()
 
@@ -151,15 +151,13 @@ def main():
     for param in zoomout.parameters():
         param.requires_grad = False
 
-    fc_model_path = './models/fc_cls.pkl'
-
-    fc_classifier = torch.load(fc_model_path)
+    fc_classifier = torch.load(args.model_path)
     fc_classifier = fc_classifier.to(device=device)
 
     classifier = DenseClassifier(fc_model=fc_classifier).float()
     classifier = classifier.to(device=device)
 
-    optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# Start in range [1e-3, 1e-4].
+    optimizer = optim.Adam(classifier.parameters(), lr=args.l_rate)# Start in range [1e-3, 1e-4].
 
     dataset_train = PascalVOC(split = 'train')
     dataset_val = PascalVOC(split = 'val')
