@@ -45,8 +45,6 @@ def train(dataset, model, optimizer, epoch):
     #     dataset_x = dataset_x.cuda(device)
     #     dataset_y = dataset_y.cuda(device)
 
-
-
     #ALTERNATIVE 1
     # Zero out all of the gradients for the variables which the optimizer
     # will update.
@@ -56,7 +54,7 @@ def train(dataset, model, optimizer, epoch):
     predictions = model.forward(tensor_x)
 
     #Loss
-    loss = cross_entropy2d(predictions, tensor_y)
+    loss = cross_entropy1d(predictions, tensor_y)
 
     #Backwards pass
     #-> How come loss, which is a scalar, is saving all the gradients found in the backwards pass?
@@ -90,9 +88,6 @@ def train(dataset, model, optimizer, epoch):
 
     #     #Update parameters of model
     #     optimizer.step()
-
-
-    print(loss)
 
 
     torch.save(model, "./models/fc_cls.pkl")

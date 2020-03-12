@@ -9,6 +9,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 import torchvision.models as models
+import os.path
+
 
 
 
@@ -17,7 +19,17 @@ class Zoomout(nn.Module):
         super(Zoomout, self).__init__()
 
         # load the pre-trained ImageNet CNN and list out the layers
-        self.vgg = models.vgg11(pretrained=True)
+
+        #slurm was not being able to dowanload the model, so I had to download it first
+        if os.path.isfile('vgg11.pth'):
+            vgg11_model = torch.load('vgg11.pth') 
+        else:
+            vgg11_model = models.vgg11(pretrained=True)
+            torch.save(vgg11_model, 'vgg11.pth')
+
+
+        self.vgg = vgg11_model
+
         self.feature_list = list(self.vgg.features.children())
 
         #Index of conv2d layers

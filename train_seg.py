@@ -40,12 +40,15 @@ def train(args, zoomout, model, train_loader, optimizer, epoch):
         #Generate tensor of features (hypercolumns) of every image
         images_features = []
         for image in images:
-            images_features.append(zoomout.forward(image.cpu().float().unsqueeze(0)))       
+            with torch.no_grad():
+                if not (USE_GPU and torch.cuda.is_available()):
+                    image = image.cpu()
+                z = zoomout.forward(image.float().unsqueeze(0))#.cpu()
+            images_features.append(z)       
         
         features = torch.cat(images_features, dim = 0)
 
-        if(USE_GPU and torch.cuda.is_available()):
-            features = features.cuda(device)
+        features = features.to(device=device)
 
         model.train() #Set model in train mode
 
@@ -81,10 +84,12 @@ def train(args, zoomout, model, train_loader, optimizer, epoch):
             visualize("./lbls/gt_" + str(count) + "_" + str(epoch) + ".png", gt)
 
     # Make sure to save your model periodically
-    torch.save(model, your_path + "/full_model.pkl")
+    torch.save(model, "./models/full_model.pkl")
 
 def val(args, zoomout, model, val_loader):
     # modified from https://github.com/wkentaro/pytorch-fcn/blob/master/examples/voc/evaluate.py
+    model = model.to(device=device)
+
     model.eval()
     print("Validating...")
     label_trues, label_preds = [], []
@@ -92,11 +97,15 @@ def val(args, zoomout, model, val_loader):
     for batch_idx, (data, target) in enumerate(val_loader):
 
         data, target = data.float(), target.float()
-        score = model(zoomout(data))
+
+        data = data.to(device=device)
+        target = target.to(device=device)
+
+        score = model.forward(zoomout(data))
 
         _, pred = torch.max(score, 1)#0
-        lbl_pred = pred.data.numpy().astype(np.int64)
-        lbl_true = target.data.numpy().astype(np.int64)
+        lbl_pred = pred.data.cpu().numpy().astype(np.int64)
+        lbl_true = target.data.cpu().numpy().astype(np.int64)
 
         for _, lt, lp in zip(_, lbl_true, lbl_pred):
             label_trues.append(lt)
@@ -135,6 +144,8 @@ def main():
     args = parser.parse_args()
 
     zoomout = Zoomout().float()
+    zoomout = zoomout.to(device=device)
+
 
     # we will not train the feature extractor
     for param in zoomout.parameters():
@@ -143,8 +154,10 @@ def main():
     fc_model_path = './models/fc_cls.pkl'
 
     fc_classifier = torch.load(fc_model_path)
+    fc_classifier = fc_classifier.to(device=device)
 
     classifier = DenseClassifier(fc_model=fc_classifier).float()
+    classifier = classifier.to(device=device)
 
     optimizer = optim.Adam(classifier.parameters(), lr=1e-3)# Start in range [1e-3, 1e-4].
 

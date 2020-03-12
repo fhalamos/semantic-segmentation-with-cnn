@@ -57,12 +57,19 @@ class FCClassifier(nn.Module):
         # x = self.dropout1(x)
 
         x = self.fc2(x)
-        x = F.relu(x)
+        # x = F.relu(x)
 
         # probs = F.softmax(x, dim=0)
 
         return x
 
+
+
+USE_GPU = True
+if USE_GPU and torch.cuda.is_available():
+    device = torch.device('cuda')
+else:
+    device = torch.device('cpu')
 
 class DenseClassifier(nn.Module):
     """
@@ -80,6 +87,12 @@ class DenseClassifier(nn.Module):
         # You'll need to add these trailing dimensions so that it broadcasts correctly.
         self.mean = torch.Tensor(np.expand_dims(np.expand_dims(self.mean, -1), -1))
         self.std = torch.Tensor(np.expand_dims(np.expand_dims(self.std, -1), -1))        
+
+
+        self.mean = self.mean.to(device=device)
+        self.std = self.std.to(device=device)
+        
+
 
         #Convert a fully connected classifier to 1x1 convolutional.               
         for index, fc_layer in enumerate(fc_model.children()):
@@ -100,21 +113,19 @@ class DenseClassifier(nn.Module):
 
 
 
-    def forward(self, x):
+    def forward(self, x): #x.shape = (n,1472,224,224)
         """
         Make sure to upsample back to 224x224 --take a look at F.upsample_bilinear
         """
+        # normalization
+
+        x = (x - self.mean)/(self.std+ 1e-5)
+
         x = self.conv1(x)
         x = F.relu(x)
         
 
         x = self.conv2(x)
         x = F.relu(x)
-
-        # normalization
-        # x = (x - self.mean)/self.std
-        # print(x.shape)
     
         return x
-
-
