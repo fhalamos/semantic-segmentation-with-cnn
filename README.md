@@ -1,4 +1,4 @@
-# Homework 4 - Semantic Segmentation with Convolutional Networks
+# Semantic Segmentation with Convolutional Networks
 
 In this project, we focus purely on labeling each pixel with one of a fixed set of categories - a process often called semantic segmentation, as the labels partition the image into regions for each category.  For this assignment, we will ignore the distinction between different instances of the same category (there are other approaches for achieving both category-level and instance-level segmentation).
 
